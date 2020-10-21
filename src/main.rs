@@ -45,12 +45,11 @@ fn main() {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_secs()
-        / 30;
+        .as_secs();
     let sha1 = Sha1::new();
     let key = parse_key("aaaa bbbb cccc xxxx yyyy zzzz 2222 7777");
     let mut hmac = Hmac::new(sha1, &key);
-    hmac.input(&now.to_be_bytes());
+    hmac.input(&(now / 30).to_be_bytes());
     let otp = truncate(hmac.result().code());
-    println!("{:03} {:03}", otp / 1000, otp % 1000);
+    println!("{:03} {:03} {}", otp / 1000, otp % 1000, now % 30);
 }
