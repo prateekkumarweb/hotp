@@ -1,6 +1,5 @@
-use crypto::hmac::Hmac;
-use crypto::mac::Mac;
-use crypto::sha1::Sha1;
+use hmac::{Hmac, Mac, NewMac};
+use sha1::Sha1;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn decode(code: u8) -> u8 {
@@ -41,15 +40,18 @@ fn truncate(hash: &[u8]) -> u64 {
     truncated % 1_000_000
 }
 
-fn main() {
+pub fn run() -> String {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    let sha1 = Sha1::new();
     let key = parse_key("aaaa bbbb cccc xxxx yyyy zzzz 2222 7777");
-    let mut hmac = Hmac::new(sha1, &key);
-    hmac.input(&(now / 30).to_be_bytes());
-    let otp = truncate(hmac.result().code());
-    println!("{:03} {:03} {}", otp / 1000, otp % 1000, now % 30);
+    let mut hmac = Hmac::<Sha1>::new_varkey(&key).unwrap();
+    hmac.update(&(now / 30).to_be_bytes());
+    let otp = truncate(&hmac.finalize().into_bytes());
+    format!("{:03} {:03} {}", otp / 1000, otp % 1000, 30 - now % 30)
+}
+
+fn main() {
+    println!("{}", run());
 }
